@@ -1,0 +1,14 @@
+CREATE TABLE Orders_fact AS
+SELECT
+    superstore_sales."Row ID",
+    superstore_sales."Order ID",
+    superstore_sales."Order Date",
+    superstore_sales."Ship Date",
+    superstore_sales."Ship Mode",
+    superstore_sales."Customer ID",
+    superstore_sales."Product ID",
+    superstore_sales."Sales ($)",
+    superstore_sales."Quantity",
+    superstore_sales."Discount($)",
+    superstore_sales."Profit($)"
+FROM superstore_sales;
