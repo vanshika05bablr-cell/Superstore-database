@@ -1,0 +1,35 @@
+ALTER TABLE orders_fact ADD COLUMN "Profit($)" NUMERIC;
+ALTER TABLE Products_Fact ADD COLUMN IF NOT EXISTS "Cost" NUMERIC DEFAULT 20;
+
+CREATE OR REPLACE FUNCTION auto_calc_profit()
+RETURNS TRIGGER AS $$
+DECLARE
+    prod_cost NUMERIC;
+BEGIN
+    -- Lookup the cost from Products_Fact
+    SELECT "Cost" INTO prod_cost
+    FROM Products_Fact
+    WHERE "Product ID" = NEW."Product ID";
+    -- Default cost if not found
+    IF prod_cost IS NULL THEN
+        prod_cost := 20;
+    END IF;
+    -- Calculate Profit
+    NEW."Profit($)" := NEW."Sales ($)" - (NEW."Sales ($)" * NEW."Discount($)") - (NEW."Quantity" * prod_cost);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Step 4: Create the BEFORE INSERT trigger
+DROP TRIGGER IF EXISTS trg_calc_profit ON Orders_fact;
+CREATE TRIGGER trg_calc_profit
+BEFORE INSERT ON Orders_fact
+FOR EACH ROW
+EXECUTE FUNCTION auto_calc_profit();
+
+INSERT INTO Orders_fact ("Row ID", "Order ID", "Product ID", "Quantity", "Sales ($)", "Discount($)")
+VALUES (1, 'O-1001', 'P-5001', 5, 1000, 0.1);
+
+-- Check result
+SELECT "Row ID", "Order ID", "Product ID", "Quantity", "Sales ($)", "Discount($)", "Profit($)"
+FROM Orders_fact WHERE "Order ID" = 'O-1001';
