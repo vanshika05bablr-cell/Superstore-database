@@ -1,0 +1,57 @@
+-- Orders table
+CREATE TABLE IF NOT EXISTS Orders (
+    "OrderID" VARCHAR(20) PRIMARY KEY,
+    "OrderStatus" VARCHAR(20),
+    "TotalQuantity" INT
+);
+
+-- Returns table
+CREATE TABLE IF NOT EXISTS Returns (
+    "ReturnID" SERIAL PRIMARY KEY,
+    "OrderID" VARCHAR(50) REFERENCES Orders("OrderID"),
+    "QuantityReturned" INT
+);
+
+INSERT INTO Orders ("OrderID", "OrderStatus", "TotalQuantity")
+VALUES ('O-7001', 'Shipped', 5);
+
+-- Check initial status
+SELECT * FROM Orders WHERE "OrderID" = 'O-7001';
+
+CREATE OR REPLACE FUNCTION update_order_status()
+RETURNS TRIGGER AS $$
+DECLARE
+    total_returned INT;
+    total_ordered INT;
+BEGIN
+    -- Sum all returned quantities for this order
+    SELECT SUM("QuantityReturned") INTO total_returned
+    FROM Returns
+    WHERE "OrderID" = NEW."OrderID";
+    -- Get total quantity ordered
+    SELECT "TotalQuantity" INTO total_ordered
+    FROM Orders
+    WHERE "OrderID" = NEW."OrderID";
+    -- If all items returned, update Orders
+    IF total_returned >= total_ordered THEN
+        UPDATE Orders
+        SET "OrderStatus" = 'Returned'
+        WHERE "OrderID" = NEW."OrderID";
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_update_order_status ON Returns;
+
+CREATE TRIGGER trg_update_order_status
+AFTER INSERT ON Returns
+FOR EACH ROW
+EXECUTE FUNCTION update_order_status();
+
+-- Insert returns for all items
+INSERT INTO Returns ("OrderID", "QuantityReturned") VALUES ('O-7001', 3);
+INSERT INTO Returns ("OrderID", "QuantityReturned") VALUES ('O-7001', 2);
+
+-- Check final status
+SELECT * FROM Orders WHERE "OrderID" = 'O-7001';
