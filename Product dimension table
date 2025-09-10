@@ -1,0 +1,10 @@
+CREATE TABLE Products_dim AS
+SELECT
+    "Product ID",
+    MIN("Category") AS Category,
+    MIN("Sub-Category") AS "Sub-Category",
+    MIN("Product Name") AS "Product Name"
+FROM
+    superstore_sales
+GROUP BY
+    "Product ID";
