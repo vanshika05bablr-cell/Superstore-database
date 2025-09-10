@@ -1,0 +1,13 @@
+CREATE TABLE customers_dim AS
+SELECT
+  "Customer ID",
+  MIN("Customer Name") AS "Customer Name",
+  MIN("Segment") AS Segment,
+	MIN("City") AS CITY,
+	MIN("State") AS State,
+	MIN("Postal Code") AS PostalCode,
+	MIN("Country") AS Country
+FROM
+    superstore_sales
+GROUP BY
+    "Customer ID";
