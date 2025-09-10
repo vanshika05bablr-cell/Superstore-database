@@ -1,0 +1,11 @@
+CREATE TABLE Products_Fact AS
+SELECT
+    superstore_sales."Product ID",
+    superstore_sales."Order ID",
+    superstore_sales."Customer ID",
+    superstore_sales."Order Date",
+    superstore_sales."Sales ($)",
+    superstore_sales."Quantity",
+    superstore_sales."Discount($)",
+    superstore_sales."Profit($)"
+FROM superstore_sales;
