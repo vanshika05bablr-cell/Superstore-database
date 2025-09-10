@@ -1,0 +1,35 @@
+ALTER TABLE products_dim ADD COLUMN stocklevel INT DEFAULT 100;
+
+--Trigger function
+CREATE OR REPLACE FUNCTION update_stocklevel()
+RETURNS TRIGGER AS $$
+DECLARE
+    new_stock INT;
+BEGIN
+    UPDATE products_dim
+    SET stocklevel = stocklevel - NEW."Quantity"
+    WHERE "Product ID" = NEW."Product ID";
+    SELECT stocklevel INTO new_stock 
+    FROM products_dim 
+    WHERE "Product ID" = NEW."Product ID";
+    IF new_stock < 10 THEN
+        RAISE NOTICE 'Stock for Product % is low (current: %)', NEW."Product ID", new_stock;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger
+DROP TRIGGER IF EXISTS trg_update_stocklevel ON Orders_fact;
+CREATE TRIGGER trg_update_stocklevel
+AFTER INSERT ON Orders_fact
+FOR EACH ROW
+EXECUTE FUNCTION update_stocklevel();
+
+SELECT "Product ID", stocklevel FROM products_dim WHERE "Product ID" = 'TEC-MA-10003176';
+
+INSERT INTO orders_fact("Row ID","Order ID","Order Date","Ship Date","Ship Mode","Customer ID","Product ID","Sales ($)","Quantity","Discount($)","Profit($)")
+VALUES (9999999,'TEST-INV-001','2025-09-01','2025-09-02','Standard','CUST-TEST','TEC-MA-10003176', 500.00, 95, 0.0, 0.0);
+
+SELECT "Product ID", stocklevel FROM products_dim WHERE "Product ID" = 'TEC-MA-10003176';
+ 
